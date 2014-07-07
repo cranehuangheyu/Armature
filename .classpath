@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="lib" path="lib/json-lib-2.4-jdk15.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/require/commons-collections.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/require/commons-lang.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/require/commons-logging.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/require/ezmorph-1.0.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/require/commons-beanutils-1.9.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/dom4j-1.6.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jaxen-1.1.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/xercesImpl.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>
