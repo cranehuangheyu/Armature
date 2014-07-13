@@ -195,6 +195,7 @@ public class MySurfaceView extends SurfaceView implements
 //			time2 = System.currentTimeMillis() - time2;
 //			Log.e("timeDelta logic", "" + time2);
 			start = System.currentTimeMillis() - start;
+			Log.e("delay time", "" + timeDelta);
 			frameDelay = UserData.FRAME_DELAY;
 			if (start < frameDelay) {
 				timeDelta = frameDelay;

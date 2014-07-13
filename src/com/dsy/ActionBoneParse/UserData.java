@@ -287,7 +287,7 @@ public interface UserData {
 	public static final short DRAW_MONEY_BUTTON_OFFSET = 495 - 214 + 10;
 	
 	// 帧延时
-	public static final byte FRAME_DELAY = 80;
+	public static final byte FRAME_DELAY = 70;
 	// 1秒多少帧
 	public static final float FPS = 1000f / FRAME_DELAY;
 }

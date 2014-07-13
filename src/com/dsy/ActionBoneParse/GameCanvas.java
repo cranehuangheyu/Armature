@@ -4,9 +4,12 @@ import java.util.Arrays;
 
 import com.dsy.ActionBoneParse.manager.AnimationManager;
 import com.dsy.ActionBoneParse.manager.PlistManager;
+import com.dsy.ActionBoneParse.util.AndroidUtil;
 import com.dsy.ActionBoneParse.util.BitmapManager;
 import com.dsy.ActionBoneParse.util.Graphics;
 import com.dsy.ActionBoneParse.view.MySurfaceView;
+import com.dsy.man.BigGunMan;
+import com.dsy.man.Hunter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -36,8 +39,10 @@ public class GameCanvas implements UserData {
 
 	// 界面缩放比例
 	public float scaleUi;
+		
+	public Bitmap mapBitmap;
 	
-	public ArmatureObj armatureObj;
+	public ArmatureObj armatureObjArray[] = new ArmatureObj[21];
 		
 	public GameCanvas(Context context, MySurfaceView mySurfaceView,
 			Canvas canvas, Paint paint) {
@@ -52,7 +57,25 @@ public class GameCanvas implements UserData {
 
 		g = new Graphics(canvas, paint, null);
 		
-		armatureObj = new ArmatureObj();
+		AnimationManager.addArmature("DemoPlayer/DemoPlayer.ExportJson");
+		AnimationManager.addArmature("BigGunMan/DemoPlayer.ExportJson");
+		
+		mapBitmap = BitmapManager.getImageFromAssetsFile("map.png");
+				
+		for (int i = 0; i < 11; i++) {
+			armatureObjArray[i] = new BigGunMan();
+			
+			armatureObjArray[i].xPos = 50;
+			armatureObjArray[i].xPos += i * 50;
+
+			if (i > 9) {
+				armatureObjArray[i].yPos = 240 + 100;
+				armatureObjArray[i].xPos -= 10 * 50;
+			}
+		}
+		
+		armatureObjArray[20] = new Hunter();
+		armatureObjArray[20].yPos = 240;
 	}
 
 	public void gameDestroy() {
@@ -77,11 +100,21 @@ public class GameCanvas implements UserData {
 
 		cleanScrean(canvas, paint);
 		
-		armatureObj.draw(g);
+		g.drawBitmapAndroid(mapBitmap, 0, 0, 0);
+
+		for (int i = 0; i < 21; i++) {
+			if (armatureObjArray[i] != null) {
+				armatureObjArray[i].draw(g);
+			}
+		}
 	}
 	
 	public void logic(int dt)
 	{
-		armatureObj.logic(dt);
+		for (int i = 0; i < 21; i++) {
+			if (armatureObjArray[i] != null) {
+				armatureObjArray[i].logic(dt);
+			}
+		}
 	}
 }

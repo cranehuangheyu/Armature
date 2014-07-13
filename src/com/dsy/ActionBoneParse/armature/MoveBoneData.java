@@ -13,6 +13,8 @@ public class MoveBoneData {
 	
 	public BoneData boneData;
 	
+	public MoveBoneData parentMoveBoneData;
+	
 	public MoveBoneData()
 	{
 		frameDataVector = new ArrayList<FrameData>();

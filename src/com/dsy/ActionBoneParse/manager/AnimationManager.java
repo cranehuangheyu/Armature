@@ -1,5 +1,8 @@
 package com.dsy.ActionBoneParse.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.dsy.ActionBoneParse.armature.Armature;
 import com.dsy.ActionBoneParse.armature.BoneData;
 import com.dsy.ActionBoneParse.armature.DisplayData;
@@ -16,13 +19,26 @@ import net.sf.json.JSONObject;
 import android.util.Log;
 
 public class AnimationManager {
-
-	public Armature armature;
 	
-	public PlistManager plistManager;
+	public static Map<String, Armature> armatureMap = new HashMap<String, Armature>();
 
-	public AnimationManager(String jsonPath, String plistPath, String pngPath) {		
-		armature = new Armature();
+	public AnimationManager(String jsonPath, String plistPath, String pngPath) {
+		
+	}
+	
+	public static void addArmature(String jsonPath) {
+		int temp1 = jsonPath.lastIndexOf("/");
+		int temp2 = jsonPath.lastIndexOf(".");
+		String tempFolderPath = jsonPath.substring(0, temp1 + 1);
+		String tempShortName = jsonPath.substring(temp1 + 1, temp2);
+		
+		String plistPath = tempFolderPath + tempShortName + ".plist";
+		String pngPath = tempFolderPath + "Resources/";
+		
+		Armature armature = new Armature();
+		
+		// add armature to armatureMap.
+		armatureMap.put(jsonPath, armature);
 
 		String JsonContext = AndroidUtil.ReadFile(jsonPath);
 		// JSONArray jsonArray = JSONArray.fromObject(JsonContext);
@@ -55,7 +71,7 @@ public class AnimationManager {
 				boneData.name = boneDataObj.getString("name");
 				armature.armatureData.boneDataArray
 						.put(boneData.name, boneData);
-				
+
 				armature.armatureData.boneDatas.add(boneData);
 
 				boneData.parent = boneDataObj.getString("parent");
@@ -73,38 +89,36 @@ public class AnimationManager {
 
 				JSONArray displayDataArray = boneDataObj
 						.getJSONArray("display_data");
-//				for (int l = 0; l < displayDataArray.size(); l++) {
-					JSONObject displayDataObj = displayDataArray
-							.getJSONObject(0);
+				// for (int l = 0; l < displayDataArray.size(); l++) {
+				JSONObject displayDataObj = displayDataArray.getJSONObject(0);
 
-					DisplayData displayData = new DisplayData();
-					
-					boneData.displayData = displayData;
-					
-					displayData.displayType = displayDataObj
-							.getInt("displayType");
-					
-					if (displayData.displayType == 0) {
-						displayData.name = displayDataObj.getString("name");
-						
-						JSONArray skinDataArray = displayDataObj
-								.getJSONArray("skin_data");
-						for (int m = 0; m < skinDataArray.size(); m++) {
-							JSONObject skinDataObj = skinDataArray.getJSONObject(m);
+				DisplayData displayData = new DisplayData();
 
-							SkinData skinData = new SkinData();
-							// displayData.skinDataVecotor.add(skinData);
-							displayData.skinData = skinData;
+				boneData.displayData = displayData;
 
-							skinData.x = (float) skinDataObj.getDouble("x");
-							skinData.y = (float) skinDataObj.getDouble("y");
-							skinData.cX = (float) skinDataObj.getDouble("cX");
-							skinData.cY = (float) skinDataObj.getDouble("cY");
-							skinData.kX = (float) skinDataObj.getDouble("kX");
-							skinData.kY = (float) skinDataObj.getDouble("kY");
-						}
+				displayData.displayType = displayDataObj.getInt("displayType");
+
+				if (displayData.displayType == 0) {
+					displayData.name = displayDataObj.getString("name");
+
+					JSONArray skinDataArray = displayDataObj
+							.getJSONArray("skin_data");
+					for (int m = 0; m < skinDataArray.size(); m++) {
+						JSONObject skinDataObj = skinDataArray.getJSONObject(m);
+
+						SkinData skinData = new SkinData();
+						// displayData.skinDataVecotor.add(skinData);
+						displayData.skinData = skinData;
+
+						skinData.x = (float) skinDataObj.getDouble("x");
+						skinData.y = (float) skinDataObj.getDouble("y");
+						skinData.cX = (float) skinDataObj.getDouble("cX");
+						skinData.cY = (float) skinDataObj.getDouble("cY");
+						skinData.kX = (float) skinDataObj.getDouble("kX");
+						skinData.kY = (float) skinDataObj.getDouble("kY");
 					}
-//				}
+				}
+				// }
 			}
 		}
 
@@ -182,21 +196,48 @@ public class AnimationManager {
 			textureData.pX = (float) textureDataObj.getDouble("pX");
 			textureData.pY = (float) textureDataObj.getDouble("pY");
 			textureData.plistFile = textureDataObj.getString("plistFile");
+			
+			float anchorX = textureData.pX * textureData.width;
+			float anchorY = (1 - textureData.pY) * textureData.height;
+						
+			if (textureDataObj.containsKey("contour_data")) {
+				JSONArray contourDataArray = textureDataObj.getJSONArray("contour_data");
+				if (contourDataArray.size() > 0) {
+					JSONObject contourDataObject = contourDataArray.getJSONObject(0);
+					
+					JSONArray vertexArray = contourDataObject.getJSONArray("vertex");
+					
+					textureData.contourData.x = new float[vertexArray.size()];
+					textureData.contourData.y = new float[vertexArray.size()];
+					for (int j1 = 0; j1 < vertexArray.size(); j1++) {
+						JSONObject vertex = vertexArray.getJSONObject(j1);
+						// Direct compute vertex real position.
+						textureData.contourData.x[j1] = (float) vertex.getDouble("x");
+						textureData.contourData.y[j1] = (float) vertex.getDouble("y");
+						
+						textureData.contourData.x[j1] += anchorX;
+						
+						textureData.contourData.y[j1] = - textureData.contourData.y[j1];
+						textureData.contourData.y[j1] += anchorY;
+					}
+				}
+			}
 		}
 
 		String tempString = jsonObject.getString("config_file_path");
 		armature.configFilePathVector.add(tempString);
-		
-		plistManager = new PlistManager(plistPath, pngPath);
+
+		PlistManager plistManager = new PlistManager(plistPath, pngPath);
 
 		// add texture data
-		for (int i = 0;i < armature.armatureData.boneDatas.size();i++) {
+		for (int i = 0; i < armature.armatureData.boneDatas.size(); i++) {
 			BoneData boneData = armature.armatureData.boneDatas.get(i);
 			boneData.index = i;
-			
+
 			// add parent bone
 			if (!"".equals(boneData.parent)) {
-				boneData.parentBoneData = armature.armatureData.boneDataArray.get(boneData.parent);
+				boneData.parentBoneData = armature.armatureData.boneDataArray
+						.get(boneData.parent);
 			}
 
 			DisplayData displayData = boneData.displayData;
@@ -210,16 +251,34 @@ public class AnimationManager {
 						.get(pngNameString);
 
 				displayData.textureData = textureData;
-				
-				displayData.bitmap = plistManager.bitmapMap.get(displayData.name);
+
+				displayData.bitmap = plistManager.bitmapMap
+						.get(displayData.name);
 			}
 		}
-		
-		for (String tempString2 : armature.animationData.moveDataVector.keySet()) {
-			MoveData moveData = armature.animationData.moveDataVector.get(tempString2);
-			for (int i = 0;i < moveData.moveDataVector.size();i++) {
+
+		for (String tempString2 : armature.animationData.moveDataVector
+				.keySet()) {
+			MoveData moveData = armature.animationData.moveDataVector
+					.get(tempString2);
+			for (int i = 0; i < moveData.moveDataVector.size(); i++) {
 				MoveBoneData moveBoneData = moveData.moveDataVector.get(i);
-				moveBoneData.boneData = armature.armatureData.boneDataArray.get(moveBoneData.name);
+				moveBoneData.boneData = armature.armatureData.boneDataArray
+						.get(moveBoneData.name);
+
+				// Add parent move bone data to move bone data.
+				if (moveBoneData.boneData.parentBoneData != null) {
+					String parentMoveBoneDataName = moveBoneData.boneData.parentBoneData.name;
+					for (int j = 0; j < moveData.moveDataVector.size(); j++) {
+						MoveBoneData parentMoveBoneData = moveData.moveDataVector
+								.get(j);
+						if (parentMoveBoneDataName
+								.equals(parentMoveBoneData.name)) {
+							moveBoneData.parentMoveBoneData = parentMoveBoneData;
+							break;
+						}
+					}
+				}
 			}
 		}
 	}

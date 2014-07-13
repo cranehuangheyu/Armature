@@ -1,5 +1,6 @@
 package com.dsy.ActionBoneParse;
 
+import com.dsy.ActionBoneParse.armature.Armature;
 import com.dsy.ActionBoneParse.armature.BoneData;
 import com.dsy.ActionBoneParse.armature.DisplayData;
 import com.dsy.ActionBoneParse.armature.DrawableData;
@@ -19,7 +20,7 @@ import android.util.Log;
 
 public class ArmatureObj {
 
-	public AnimationManager animationManager;
+	public Armature armature;
 
 	public float xPos;
 
@@ -34,98 +35,141 @@ public class ArmatureObj {
 	public int frame;
 
 	public float timeDelta;
-	
-	public MoveData moveData;
-	
-	public DrawableData drawableDataArray[];
-	
-	public float timeScale;
-	
-	public float faceTo;
-	
-	public Matrix matrixAssistant;
-	
-	public float bodyScale;
 
-	public ArmatureObj() {
+	public MoveData moveData;
+
+	public DrawableData drawableDataArray[];
+
+	public float timeScale;
+
+	public float faceTo;
+
+	public Matrix matrixAssistant;
+
+	public float bodyScale;
+	
+	// In boneData.drawableDataVector index, because search drawableData from boneData is difficult.
+	public int indexInBoneData;
+
+	public ArmatureObj(String jsonPath) {
 		xPos = 400;
 
 		yPos = 480;
 		
-		animationManager = new AnimationManager("DemoPlayer/Export/DemoPlayer.ExportJson", "DemoPlayer/Export/DemoPlayer0.plist", "DemoPlayer/Export/Resources/");
-		
-		drawableDataArray = new DrawableData[animationManager.armature.armatureData.boneDataArray.size()];
+		armature = AnimationManager.armatureMap.get(jsonPath);
+
+		drawableDataArray = new DrawableData[armature.armatureData.boneDatas
+				.size()];
 		for (int i = 0; i < drawableDataArray.length; i++) {
 			drawableDataArray[i] = new DrawableData();
+			BoneData boneData = armature.armatureData.boneDatas
+					.get(i);
+			boneData.drawableDataVector.add(drawableDataArray[i]);
+			indexInBoneData = boneData.drawableDataVector.size() - 1;
+			
+			drawableDataArray[i].boneData = boneData;
+			
+			if (boneData.displayData.displayType == 0 && boneData.displayData.textureData.contourData.x != null) {
+				drawableDataArray[i].contourVertexArray = new float[boneData.displayData.textureData.contourData.x.length][2];
+			}
 		}
-				
-		for (int j = 0; j < animationManager.armature.armatureData.boneDatas.size(); j++) {
-			BoneData boneData = animationManager.armature.armatureData.boneDatas.get(j);
-			drawableDataArray[j].boneData = boneData;
-		}
-		
-		playWithAnimation("walk");
 
 		timeDelta = 0;
-		
-		timeScale = 2;
-		
+
+		timeScale = 1;
+
 		faceTo = 0;
-		
-		bodyScale = 0.4f;
-		
+
+		bodyScale = 0.5f;
+
 		matrixAssistant = new Matrix();
 	}
 
+	private DrawableData drawableDataForDraw;
+
 	public void draw(Graphics g) {
-		
+
+//		time2 = System.currentTimeMillis();
+
 		for (int i = moveData.moveDataVector.size() - 1; i > -1; i--) {
 			MoveBoneData moveBoneData = moveData.moveDataVector.get(i);
-			
-			for (int i1 = 0; i1 < drawableDataArray.length; i1++) {
-				drawableData = drawableDataArray[i1];
-				
-				if (moveBoneData.name.equals(drawableData.boneData.name)) {
-					if (drawableData.isComputed && drawableData.boneData.displayData.bitmap != null) {
-//						g.drawBitmapBone(drawableData.boneData.displayData.bitmap,
-//								xPos + drawableData.x, yPos - drawableData.y, drawableData.cX, drawableData.cY, drawableData.kX, -drawableData.kY, drawableData.boneData.displayData.textureData.pX,
-//								1 - drawableData.boneData.displayData.textureData.pY);	
-						g.drawBitmapBone(drawableData.boneData.displayData.bitmap, drawableData.skinMatrix);
-					}
-					drawableData.isComputed = false;
-				}
+			drawableDataForDraw = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
+
+			if (drawableDataForDraw.isComputed
+					&& drawableDataForDraw.boneData.displayData.bitmap != null
+					&& drawableDataForDraw.isVisable) {
+				g.drawBitmapBone(
+						drawableDataForDraw.boneData.displayData.bitmap,
+						drawableDataForDraw.skinMatrix);
 			}
+			drawableDataForDraw.isComputed = false;
 		}
+		
+		// draw contour vertex
+//		drawContourVertex(g);
+
+//		time2 = System.currentTimeMillis() - time2;
+//		Log.e("timeDelta logic", "" + time2);
 	}
 	
-	private DrawableData drawableData;
+	public void drawContourVertex(Graphics g) {
+		for (int i = moveData.moveDataVector.size() - 1; i > -1; i--) {
+			MoveBoneData moveBoneData = moveData.moveDataVector.get(i);
+			drawableDataForDraw = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
+
+			if (drawableDataForDraw.boneData.displayData.bitmap != null
+					&& drawableDataForDraw.isVisable) {
+				if (drawableDataForDraw.contourVertexArray != null) {
+					for (int j = 0; j < drawableDataForDraw.contourVertexArray.length; j++) {
+						float point1[];
+						float point2[];
+						if (j == drawableDataForDraw.contourVertexArray.length - 1) {
+							point1 = drawableDataForDraw.contourVertexArray[j];
+							point2 = drawableDataForDraw.contourVertexArray[0];
+						} else {
+							point1 = drawableDataForDraw.contourVertexArray[j];
+							point2 = drawableDataForDraw.contourVertexArray[j + 1];
+						}
+						
+						g.save();
+						g.setColor(255, 0, 0);
+						g.drawLine(point1[0], point1[1], point2[0], point2[1]);
+						g.restore();
+					}
+				}
+			}
+			drawableDataForDraw.isComputed = false;
+		}
+	}
 
 	public void playWithAnimation(String name) {
 		playWithAnimation = name;
-		
-		moveData = animationManager.armature.animationData.moveDataVector
+
+		moveData = armature.animationData.moveDataVector
 				.get(playWithAnimation);
 
-		currentAnimationFrameMax = moveData.dr;
+		currentAnimationFrameMax = moveData.dr - 1;
 
 		currentAnimationFrameRate = 1000 / (moveData.sc * 60);
 
 		frame = 0;
 	}
-	
-	public void makeRootBoneData(int index) {
-		
-		if (drawableDataArray[index].isComputed) {
-			return ;
+
+	public void makeRootBoneData(MoveBoneData moveBoneData) {
+
+		DrawableData drawableDataRootBone = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
+
+		if (drawableDataRootBone.isComputed) {
+			return;
 		}
-		
+
 		float x;
 		float y;
 		float cX;
 		float cY;
 		float kX;
 		float kY;
- 
+
 		// offset
 		float xOffset = 0;
 		float yOffset = 0;
@@ -134,187 +178,220 @@ public class ArmatureObj {
 		float kXOffset = 0;
 		float kYOffset = 0;
 
-		//
-//		MoveBoneData moveBoneData = null;
-		int iIndex = 0;
-		for (; iIndex < moveData.moveDataVector.size(); iIndex++) {
-			MoveBoneData moveBoneData = moveData.moveDataVector.get(iIndex);
-			
-			Log.e("find move bone data", moveBoneData.name + ",," + drawableDataArray[index].boneData.name);
-			if (moveBoneData.name.equals(drawableDataArray[index].boneData.name)) {
-				break;
-			}
-		}
-		
-		Log.e("iIndex", "" + iIndex);
-		Log.e("moveData.moveDataVector", "" + moveData.moveDataVector.size());
-		
-		if (iIndex >= moveData.moveDataVector.size()) {
-			return ;
+		// int frameDataIndex = getFrameDataIndex(frame, moveBoneData);
+
+		if (frame == 0) {
+			drawableDataRootBone.frameDataIndex = 0;
 		}
 
-//		for (int i = 0;i < moveData.moveDataVector.size();i++) {
-			MoveBoneData moveBoneData = moveData.moveDataVector.get(iIndex);
+		FrameData frameData2 = null;
+		if (drawableDataRootBone.frameDataIndex < moveBoneData.frameDataVector
+				.size() - 1) {
+			frameData2 = moveBoneData.frameDataVector
+					.get(drawableDataRootBone.frameDataIndex + 1);
+		}
 
-			int frameDataIndex = getFrameDataIndex(frame, moveBoneData);
-
-			// current frame
-			FrameData frameData = moveBoneData.frameDataVector
-					.get(frameDataIndex);
-
-			FrameData frameData2 = null;
-			if (frameDataIndex < moveBoneData.frameDataVector.size() - 1) {
-				frameData2 = moveBoneData.frameDataVector
-						.get(frameDataIndex + 1);
-			}
-			
-			BoneData boneData = moveBoneData.boneData;
-
-			DisplayData displayData = boneData.displayData;
-
-			if (displayData.displayType == 0) {
-				SkinData skinData = displayData.skinData;
-
-				x = boneData.x + frameData.x;
-				y = boneData.y + frameData.y;
-				cX = frameData.cX;
-				cY = frameData.cY;
-				kX = boneData.kX + frameData.kX;
-				kY = boneData.kY + frameData.kY;
-
-				// add interpolation
-				if (frameData2 != null) {
-					xOffset = frameData2.x - frameData.x;
-					yOffset = frameData2.y - frameData.y;
-					cXOffset = frameData2.cX - frameData.cX;
-					cYOffset = frameData2.cY - frameData.cY;
-					kXOffset = frameData2.kX - frameData.kX;
-					kYOffset = frameData2.kY - frameData.kY;
-
-					float rate = computeTweenRate(frame, frameData, frameData2);
-					xOffset = xOffset * rate;
-					yOffset = yOffset * rate;
-					cXOffset = cXOffset * rate;
-					cYOffset = cYOffset * rate;
-					kXOffset = kXOffset * rate;
-					kYOffset = kYOffset * rate;
-
-					x += xOffset;
-					y += yOffset;
-					cX += cXOffset;
-					cY += cYOffset;
-					kX += kXOffset;
-					kY += kYOffset;
+		if (frameData2 != null) {
+			if (frame >= frameData2.fi) {
+				drawableDataRootBone.frameDataIndex++;
+				if (drawableDataRootBone.frameDataIndex >= moveBoneData.frameDataVector
+						.size()) {
+					drawableDataRootBone.frameDataIndex--;
 				}
-				
-				drawableDataArray[index].xBone = x;
-				drawableDataArray[index].yBone = y;
-				drawableDataArray[index].cXBone = cX;
-				drawableDataArray[index].cYBone = cY;
-				drawableDataArray[index].kXBone = kX;
-				drawableDataArray[index].kYBone = kY;
-				
-				// compute bone matrix
-				drawableDataArray[index].boneMatrix.reset();
-				drawableDataArray[index].boneMatrix.postTranslate(x, -y);
-				drawableDataArray[index].boneMatrix.postScale(cX, cY, x, -y);
-				Graphics.mySkewTranslation(drawableDataArray[index].boneMatrix, -kY, kX, x, -y);
-								
-				x += skinData.x;
-				y += skinData.y;
-				kX += skinData.kX;
-				kY += skinData.kY;
-
-				drawableDataArray[index].x = x;
-				drawableDataArray[index].y = y;
-				drawableDataArray[index].cX = cX;
-				drawableDataArray[index].cY = cY;
-				drawableDataArray[index].kX = kX;
-				drawableDataArray[index].kY = kY;
-				
-				Log.e("root index", "" + index);
-				
-				// compute skin matrix
-				drawableDataArray[index].skinMatrix.reset();
-				drawableDataArray[index].skinMatrix.postTranslate(skinData.x, -skinData.y);
-				drawableDataArray[index].skinMatrix.postTranslate(- drawableData.boneData.displayData.textureData.pX * displayData.bitmap.getWidth(), 
-						- (1 - drawableData.boneData.displayData.textureData.pY) * displayData.bitmap.getHeight());
-				drawableDataArray[index].skinMatrix.postScale(skinData.cX, skinData.cY, skinData.x, -skinData.y);
-				Graphics.mySkewTranslation(drawableDataArray[index].skinMatrix, -skinData.kY,skinData.kX, skinData.x, -skinData.y);
-				
-				drawableDataArray[index].skinMatrix.postConcat(drawableDataArray[index].boneMatrix);
-				
-				matrixAssistant.setScale(bodyScale, bodyScale);
-				if (faceTo == 1) {
-					matrixAssistant.postScale(-1, 1);
-				}
-				drawableDataArray[index].skinMatrix.postConcat(matrixAssistant);
-				
-				drawableDataArray[index].skinMatrix.postTranslate(xPos, yPos);
-																
-				drawableDataArray[index].isComputed = true;
-			}
-//		}
-	}
-	
-	public void makeParentBoneData(int index) 
-	{
-		if (drawableDataArray[index].isComputed) {
-			return ;
-		}
-		
-		BoneData parentBoneData = drawableDataArray[index].boneData.parentBoneData;
-		
-		if (parentBoneData.parentBoneData == null) {
-			makeRootBoneData(parentBoneData.index);
-		} else {
-			makeParentBoneData(parentBoneData.index);
-		}
-		
-		// compute parent bone data
-		DrawableData drawableData = drawableDataArray[index];
-		DrawableData parentDrawableData = drawableDataArray[parentBoneData.index];
-		
-		DisplayData displayData = drawableData.boneData.displayData;
-		
-		// children bone
-		BoneData boneData = drawableData.boneData;
-		SkinData skinData = boneData.displayData.skinData;
-		
-		int iIndex = 0;
-		for (; iIndex < moveData.moveDataVector.size(); iIndex++) {
-			MoveBoneData moveBoneData = moveData.moveDataVector.get(iIndex);
-			if (moveBoneData.name.equals(boneData.name)) {
-				break;
 			}
 		}
-		
-		if (iIndex >= moveData.moveDataVector.size()) {
-			return ;
-		}
-		
-		// children frame data
-		MoveBoneData moveBoneData = moveData.moveDataVector.get(iIndex);
-
-		int frameDataIndex = getFrameDataIndex(frame, moveBoneData);
 
 		// current frame
 		FrameData frameData = moveBoneData.frameDataVector
-				.get(frameDataIndex);
+				.get(drawableDataRootBone.frameDataIndex);
+
+		if (drawableDataRootBone.frameDataIndex < moveBoneData.frameDataVector
+				.size() - 1) {
+			frameData2 = moveBoneData.frameDataVector
+					.get(drawableDataRootBone.frameDataIndex + 1);
+		} else {
+			frameData2 = null;
+		}
+
+		if (frameData.dI == -1000) {
+			drawableDataRootBone.isVisable = false;
+		} else {
+			drawableDataRootBone.isVisable = true;
+		}
+
+		BoneData boneData = moveBoneData.boneData;
+
+		DisplayData displayData = boneData.displayData;
+
+		if (displayData.displayType == 0) {
+			SkinData skinData = displayData.skinData;
+
+			x = boneData.x + frameData.x;
+			y = boneData.y + frameData.y;
+			cX = boneData.cX + frameData.cX - 1;
+			cY = boneData.cY + frameData.cY - 1;
+			kX = boneData.kX + frameData.kX;
+			kY = boneData.kY + frameData.kY;
+
+			// add interpolation
+			if (frameData2 != null) {
+				xOffset = frameData2.x - frameData.x;
+				yOffset = frameData2.y - frameData.y;
+				cXOffset = frameData2.cX - frameData.cX;
+				cYOffset = frameData2.cY - frameData.cY;
+				kXOffset = frameData2.kX - frameData.kX;
+				kYOffset = frameData2.kY - frameData.kY;
+
+				float rate = computeTweenRate(frame, frameData, frameData2);
+				xOffset = xOffset * rate;
+				yOffset = yOffset * rate;
+				cXOffset = cXOffset * rate;
+				cYOffset = cYOffset * rate;
+				kXOffset = kXOffset * rate;
+				kYOffset = kYOffset * rate;
+
+				x += xOffset;
+				y += yOffset;
+				cX += cXOffset;
+				cY += cYOffset;
+				kX += kXOffset;
+				kY += kYOffset;
+			}
+
+			drawableDataRootBone.xBone = x;
+			drawableDataRootBone.yBone = y;
+			drawableDataRootBone.cXBone = cX;
+			drawableDataRootBone.cYBone = cY;
+			drawableDataRootBone.kXBone = kX;
+			drawableDataRootBone.kYBone = kY;
+
+			// compute bone matrix
+			drawableDataRootBone.boneMatrix.reset();
+			drawableDataRootBone.boneMatrix.postTranslate(x, -y);
+			drawableDataRootBone.boneMatrix.postScale(cX, cY, x, -y);
+			Graphics.mySkewTranslation(drawableDataRootBone.boneMatrix, -kY,
+					kX, x, -y);
+
+			x += skinData.x;
+			y += skinData.y;
+			kX += skinData.kX;
+			kY += skinData.kY;
+			cX += skinData.cX;
+			cY += skinData.cY;
+
+			drawableDataRootBone.x = x;
+			drawableDataRootBone.y = y;
+			drawableDataRootBone.cX = cX;
+			drawableDataRootBone.cY = cY;
+			drawableDataRootBone.kX = kX;
+			drawableDataRootBone.kY = kY;
+
+			// compute skin matrix
+			drawableDataRootBone.skinMatrix.reset();
+			drawableDataRootBone.skinMatrix.postTranslate(skinData.x,
+					-skinData.y);
+			drawableDataRootBone.skinMatrix
+					.postTranslate(
+							-drawableDataRootBone.boneData.displayData.textureData.pX
+									* displayData.bitmap.getWidth(),
+							-(1 - drawableDataRootBone.boneData.displayData.textureData.pY)
+									* displayData.bitmap.getHeight());
+			drawableDataRootBone.skinMatrix.postScale(skinData.cX, skinData.cY,
+					skinData.x, -skinData.y);
+			Graphics.mySkewTranslation(drawableDataRootBone.skinMatrix,
+					-skinData.kY, skinData.kX, skinData.x, -skinData.y);
+
+			drawableDataRootBone.skinMatrix
+					.postConcat(drawableDataRootBone.boneMatrix);
+
+			matrixAssistant.setScale(bodyScale, bodyScale);
+			if (faceTo == 1) {
+				matrixAssistant.postScale(-1, 1);
+			}
+			drawableDataRootBone.skinMatrix.postConcat(matrixAssistant);
+
+			drawableDataRootBone.skinMatrix.postTranslate(xPos, yPos);
+						
+			computeVertex(drawableDataRootBone);
+
+			drawableDataRootBone.isComputed = true;
+		}
+		// }
+	}
+
+	public void makeParentBoneData(MoveBoneData moveBoneData) {
+		DrawableData drawableParentBoneData = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
+
+		if (drawableParentBoneData.isComputed) {
+			return;
+		}
+
+		BoneData parentBoneData = drawableParentBoneData.boneData.parentBoneData;
+
+		if (parentBoneData.parentBoneData == null) {
+			makeRootBoneData(moveBoneData.parentMoveBoneData);
+		} else {
+			makeParentBoneData(moveBoneData.parentMoveBoneData);
+		}
+
+		// compute parent bone data
+		DrawableData drawableData = drawableParentBoneData;
+		DrawableData parentDrawableData = drawableDataArray[parentBoneData.index];
+
+		DisplayData displayData = drawableData.boneData.displayData;
+
+		// children bone
+		BoneData boneData = drawableData.boneData;
+		SkinData skinData = boneData.displayData.skinData;
+
+		if (frame == 0) {
+			drawableParentBoneData.frameDataIndex = 0;
+		}
 
 		FrameData frameData2 = null;
-		if (frameDataIndex < moveBoneData.frameDataVector.size() - 1) {
+		if (drawableParentBoneData.frameDataIndex < moveBoneData.frameDataVector
+				.size() - 1) {
 			frameData2 = moveBoneData.frameDataVector
-					.get(frameDataIndex + 1);
+					.get(drawableParentBoneData.frameDataIndex + 1);
 		}
-		
+
+		if (frameData2 != null) {
+			if (frame >= frameData2.fi) {
+				drawableParentBoneData.frameDataIndex++;
+				if (drawableParentBoneData.frameDataIndex >= moveBoneData.frameDataVector
+						.size()) {
+					drawableParentBoneData.frameDataIndex--;
+				}
+			}
+		}
+
+		// int frameDataIndex = getFrameDataIndex(frame, moveBoneData);
+
+		// current frame
+		FrameData frameData = moveBoneData.frameDataVector
+				.get(drawableParentBoneData.frameDataIndex);
+
+		if (drawableParentBoneData.frameDataIndex < moveBoneData.frameDataVector
+				.size() - 1) {
+			frameData2 = moveBoneData.frameDataVector
+					.get(drawableParentBoneData.frameDataIndex + 1);
+		} else {
+			frameData2 = null;
+		}
+
+		if (frameData.dI == -1000) {
+			drawableParentBoneData.isVisable = false;
+		} else {
+			drawableParentBoneData.isVisable = true;
+		}
+
 		float xOffset = 0;
 		float yOffset = 0;
 		float cXOffset = 0;
 		float cYOffset = 0;
 		float kXOffset = 0;
 		float kYOffset = 0;
-		
+
 		if (frameData2 != null) {
 			xOffset = frameData2.x - frameData.x;
 			yOffset = frameData2.y - frameData.y;
@@ -330,24 +407,25 @@ public class ArmatureObj {
 			kXOffset = kXOffset * rate;
 			kYOffset = kYOffset * rate;
 		}
-		
+
 		// parent bone kx ky
-//		PointF pointF = pointRotateByPoint(parentDrawableData.xBone + boneData.x + frameData.x + xOffset, 
-//				parentDrawableData.xBone, 
-//				parentDrawableData.yBone + boneData.y + frameData.y + yOffset, 
-//				parentDrawableData.yBone, 
-//				parentDrawableData.kYBone);
-//		drawableData.x = pointF.x;
-//		drawableData.y = pointF.y;
-		
+		// PointF pointF = pointRotateByPoint(parentDrawableData.xBone +
+		// boneData.x + frameData.x + xOffset,
+		// parentDrawableData.xBone,
+		// parentDrawableData.yBone + boneData.y + frameData.y + yOffset,
+		// parentDrawableData.yBone,
+		// parentDrawableData.kYBone);
+		// drawableData.x = pointF.x;
+		// drawableData.y = pointF.y;
+
 		// children bone data
 		drawableData.x = boneData.x + frameData.x + xOffset;
 		drawableData.y = boneData.y + frameData.y + yOffset;
-		drawableData.cX = frameData.cX + cXOffset;
-		drawableData.cY = frameData.cY + cYOffset;
+		drawableData.cX = boneData.cX + frameData.cX - 1;
+		drawableData.cY = boneData.cY + frameData.cY - 1;
 		drawableData.kX = frameData.kX + kXOffset + boneData.kX;
 		drawableData.kY = frameData.kY + kYOffset + boneData.kY;
-		
+
 		// bone data
 		drawableData.xBone = drawableData.x;
 		drawableData.yBone = drawableData.y;
@@ -355,47 +433,67 @@ public class ArmatureObj {
 		drawableData.cYBone = drawableData.cY;
 		drawableData.kXBone = drawableData.kX;
 		drawableData.kYBone = drawableData.kY;
-		
-		// compute bone matrix
-		drawableDataArray[index].boneMatrix.reset();
-		drawableDataArray[index].boneMatrix.postTranslate(drawableData.x, -drawableData.y);
-		drawableDataArray[index].boneMatrix.postScale(drawableData.cX, drawableData.cY, drawableData.x, -drawableData.y);
-		Graphics.mySkewTranslation(drawableDataArray[index].boneMatrix, -drawableData.kY, drawableData.kX, drawableData.x, -drawableData.y);
-		
-		// concat parent bone matrix
-		drawableDataArray[index].boneMatrix.postConcat(parentDrawableData.boneMatrix);
 
-//		pointF = pointRotateByPoint(parentDrawableData.xBone + boneData.x + frameData.x + xOffset + skinData.x, 
-//				parentDrawableData.xBone, 
-//				parentDrawableData.yBone + boneData.y + frameData.y + yOffset + skinData.y, 
-//				parentDrawableData.yBone, 
-//				parentDrawableData.kYBone);
-		
+		// compute bone matrix
+		drawableParentBoneData.boneMatrix.reset();
+		drawableParentBoneData.boneMatrix.postTranslate(drawableData.x,
+				-drawableData.y);
+		drawableParentBoneData.boneMatrix.postScale(drawableData.cX,
+				drawableData.cY, drawableData.x, -drawableData.y);
+		Graphics.mySkewTranslation(drawableParentBoneData.boneMatrix,
+				-drawableData.kY, drawableData.kX, drawableData.x,
+				-drawableData.y);
+
+		// concat parent bone matrix
+		drawableParentBoneData.boneMatrix
+				.postConcat(parentDrawableData.boneMatrix);
+
+		// pointF = pointRotateByPoint(parentDrawableData.xBone + boneData.x +
+		// frameData.x + xOffset + skinData.x,
+		// parentDrawableData.xBone,
+		// parentDrawableData.yBone + boneData.y + frameData.y + yOffset +
+		// skinData.y,
+		// parentDrawableData.yBone,
+		// parentDrawableData.kYBone);
+
 		drawableData.x += skinData.x;
 		drawableData.y += skinData.y;
 		drawableData.kX += skinData.kX;
 		drawableData.kY += skinData.kY;
-		
+		drawableData.cX += skinData.cX;
+		drawableData.cY += skinData.cY;
+
 		// compute skin matrix
-		drawableDataArray[index].skinMatrix.reset();
-		drawableDataArray[index].skinMatrix.postTranslate(skinData.x, -skinData.y);
-		drawableDataArray[index].skinMatrix.postTranslate(- drawableData.boneData.displayData.textureData.pX * displayData.bitmap.getWidth(), 
-				- (1 - drawableData.boneData.displayData.textureData.pY) * displayData.bitmap.getHeight());
-		drawableDataArray[index].skinMatrix.postScale(skinData.cX, skinData.cY, skinData.x, -skinData.y);
-		Graphics.mySkewTranslation(drawableDataArray[index].skinMatrix, -skinData.kY,skinData.kX, skinData.x, -skinData.y);
-		
-		drawableDataArray[index].skinMatrix.postConcat(drawableDataArray[index].boneMatrix);
-		
+		drawableParentBoneData.skinMatrix.reset();
+		drawableParentBoneData.skinMatrix
+				.postTranslate(skinData.x, -skinData.y);
+		drawableParentBoneData.skinMatrix.postTranslate(
+				-drawableData.boneData.displayData.textureData.pX
+						* displayData.bitmap.getWidth(),
+				-(1 - drawableData.boneData.displayData.textureData.pY)
+						* displayData.bitmap.getHeight());
+		drawableParentBoneData.skinMatrix.postScale(skinData.cX, skinData.cY,
+				skinData.x, -skinData.y);
+		Graphics.mySkewTranslation(drawableParentBoneData.skinMatrix,
+				-skinData.kY, skinData.kX, skinData.x, -skinData.y);
+
+		drawableParentBoneData.skinMatrix
+				.postConcat(drawableParentBoneData.boneMatrix);
+
 		matrixAssistant.setScale(bodyScale, bodyScale);
 		if (faceTo == 1) {
 			matrixAssistant.postScale(-1, 1);
 		}
-		drawableDataArray[index].skinMatrix.postConcat(matrixAssistant);
-				
-		drawableDataArray[index].skinMatrix.postTranslate(xPos, yPos);
+		drawableParentBoneData.skinMatrix.postConcat(matrixAssistant);
+
+		drawableParentBoneData.skinMatrix.postTranslate(xPos, yPos);
 		
+		computeVertex(drawableParentBoneData);
+
 		drawableData.isComputed = true;
 	}
+
+	public long time2;
 
 	public void logic(int dt) {
 
@@ -404,26 +502,44 @@ public class ArmatureObj {
 
 			int temp = (int) (timeDelta / (currentAnimationFrameRate * timeScale));
 
+			temp = 1;
+
+			// If you need frame skip, set 1 to temp.
 			frame += temp;
 			if (frame >= currentAnimationFrameMax) {
 				frame = 0;
 			}
 
-			timeDelta = timeDelta - temp * (currentAnimationFrameRate * timeScale);
+			timeDelta = timeDelta - temp
+					* (currentAnimationFrameRate * timeScale);
 		}
-		
+
+		// Log.e("deltaTime", "" + dt);
+
 		update();
 	}
-	
+
 	public void update() {
-		for (int i = 0; i < drawableDataArray.length; i++) {
-			drawableData = drawableDataArray[i];
-				if (drawableData.boneData.parentBoneData == null) {
-					makeRootBoneData(i);
-				} else {
-					makeParentBoneData(i);
-				}
+
+		for (int i = moveData.moveDataVector.size() - 1; i > -1; i--) {
+			MoveBoneData moveBoneData = moveData.moveDataVector.get(i);
+			// drawableData = moveBoneData.boneData.drawableData;
+
+			if (moveBoneData.boneData.parentBoneData == null) {
+				makeRootBoneData(moveBoneData);
+			} else {
+				makeParentBoneData(moveBoneData);
+			}
 		}
+
+		// for (int i = 0; i < drawableDataArray.length; i++) {
+		// drawableData = drawableDataArray[i];
+		// if (drawableData.boneData.parentBoneData == null) {
+		// makeRootBoneData(i);
+		// } else {
+		// makeParentBoneData(i);
+		// }
+		// }
 	}
 
 	public float computeTweenRate(int frame, FrameData frameData,
@@ -445,14 +561,40 @@ public class ArmatureObj {
 		}
 		return moveBoneData.frameDataVector.size() - 1;
 	}
-	
+
 	public PointF pointF = new PointF();
-	
-	public PointF pointRotateByPoint(float x, float rx0, float y, float ry0, float a)
-	{
+
+	public PointF pointRotateByPoint(float x, float rx0, float y, float ry0,
+			float a) {
 		float x0 = (float) ((x - rx0) * Math.cos(a) - (y - ry0) * Math.sin(a) + rx0);
 		float y0 = (float) ((x - rx0) * Math.sin(a) + (y - ry0) * Math.cos(a) + ry0);
 		pointF.set(x0, y0);
 		return pointF;
+	}
+	
+	public PointF computePointInMatrix(float x, float y, Matrix matrix) {
+		float values[] = new float[9];
+		matrix.getValues(values);
+		x = values[0] * x + values[1] * y + values[2];
+		y = values[3] * x + values[4] * y + values[5];
+		pointF.set(x, y);
+		return pointF;
+	}
+	
+	public void computeVertex(DrawableData drawableData)
+	{
+		if (drawableData.contourVertexArray == null) {
+			return ;
+		}
+		
+		for (int i = 0; i < drawableData.contourVertexArray.length; i++) {
+			PointF tempPointF = computePointInMatrix( 
+					drawableData.boneData.displayData.textureData.contourData.x[i], 
+					drawableData.boneData.displayData.textureData.contourData.y[i], 
+					drawableData.skinMatrix);
+			
+			drawableData.contourVertexArray[i][0] = tempPointF.x;
+			drawableData.contourVertexArray[i][1] = tempPointF.y;
+		}
 	}
 }

@@ -29,6 +29,12 @@ public class DrawableData {
 	
 	public Matrix skinMatrix;
 	
+	public boolean isVisable;
+	
+	public int frameDataIndex;
+	
+	public float contourVertexArray[][];
+		
 	public DrawableData() {
 		boneMatrix = new Matrix();
 		

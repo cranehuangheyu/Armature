@@ -41,7 +41,7 @@ public class PlistManager {
 
 			// Ω‚ŒˆŒƒº˛£Æ£Æ£Æ 
 //			InputStream inputStream = AndroidUtil.getResourceAsStream("DemoPlayer/Export/DemoPlayer/NewAnimation0.plist");
-			InputStream inputStream = AndroidUtil.getResourceAsStream("DemoPlayer/Export/DemoPlayer0.plist");
+			InputStream inputStream = AndroidUtil.getResourceAsStream(plistPath);
 
 			try {
 //				xr.setFeature( "http://xml.org/sax/features/validation", false); 

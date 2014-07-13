@@ -1,5 +1,6 @@
 eclipse.preferences.version=1
 encoding//src/com/dsy/ActionBoneParse/ArmatureActivity.java=UTF-8
+encoding//src/com/dsy/ActionBoneParse/ArmatureObj.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/GameCanvas.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/UserData.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/manager/PlistManager.java=UTF-8
@@ -10,3 +11,4 @@ encoding//src/com/dsy/ActionBoneParse/util/Camera.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/util/Graphics.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/util/Util.java=UTF-8
 encoding//src/com/dsy/ActionBoneParse/view/MySurfaceView.java=UTF-8
+encoding//src/com/dsy/man/BigGunMan.java=UTF-8
