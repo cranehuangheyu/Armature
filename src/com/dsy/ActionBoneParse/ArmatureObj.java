@@ -22,6 +22,7 @@ public class ArmatureObj {
 
 	public Armature armature;
 
+	// 坐标
 	public float xPos;
 
 	public float yPos;
@@ -40,15 +41,18 @@ public class ArmatureObj {
 
 	public DrawableData drawableDataArray[];
 
+	// 时间缩放
 	public float timeScale;
 
+	// 朝向
 	public float faceTo;
 
 	public Matrix matrixAssistant;
 
+	// 身体缩放
 	public float bodyScale;
 	
-	// In boneData.drawableDataVector index, because search drawableData from boneData is difficult.
+	// In boneData.drawableDataVector index, because search drawableData from boneData is waste time.
 	public int indexInBoneData;
 
 	public ArmatureObj(String jsonPath) {
@@ -57,6 +61,15 @@ public class ArmatureObj {
 		yPos = 480;
 		
 		armature = AnimationManager.armatureMap.get(jsonPath);
+		
+		if (armature == null) {
+			AnimationManager.addArmature(jsonPath);
+			armature = AnimationManager.armatureMap.get(jsonPath);
+		}
+		
+		if (armature == null) {
+			Log.e("error!!", "the armature can not found!");
+		}
 
 		drawableDataArray = new DrawableData[armature.armatureData.boneDatas
 				.size()];
@@ -69,8 +82,11 @@ public class ArmatureObj {
 			
 			drawableDataArray[i].boneData = boneData;
 			
-			if (boneData.displayData.displayType == 0 && boneData.displayData.textureData.contourData.x != null) {
-				drawableDataArray[i].contourVertexArray = new float[boneData.displayData.textureData.contourData.x.length][2];
+			drawableDataArray[i].contourVertexArray = new float[boneData.displayDataVector.size()][][];
+			for (int j = 0; j < boneData.displayDataVector.size(); j++) {
+				if (boneData.displayDataVector.get(j).displayType == 0 && boneData.displayDataVector.get(j).textureData.contourData.x != null) {
+					drawableDataArray[i].contourVertexArray[j] = new float[boneData.displayDataVector.get(j).textureData.contourData.x.length][2];
+				}
 			}
 		}
 
@@ -96,11 +112,11 @@ public class ArmatureObj {
 			drawableDataForDraw = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
 
 			if (drawableDataForDraw.isComputed
-					&& drawableDataForDraw.boneData.displayData.bitmap != null
+					&& drawableDataForDraw.boneData.displayDataVector.get(drawableDataForDraw.drawIndex).bitmap != null
 					&& drawableDataForDraw.isVisable) {
 				g.drawBitmapBone(
-						drawableDataForDraw.boneData.displayData.bitmap,
-						drawableDataForDraw.skinMatrix);
+						drawableDataForDraw.boneData.displayDataVector.get(drawableDataForDraw.drawIndex).bitmap,
+						drawableDataForDraw.skinMatrix, drawableDataForDraw.alpha);
 			}
 			drawableDataForDraw.isComputed = false;
 		}
@@ -117,18 +133,18 @@ public class ArmatureObj {
 			MoveBoneData moveBoneData = moveData.moveDataVector.get(i);
 			drawableDataForDraw = moveBoneData.boneData.drawableDataVector.get(indexInBoneData);
 
-			if (drawableDataForDraw.boneData.displayData.bitmap != null
+			if (drawableDataForDraw.boneData.displayDataVector.get(drawableDataForDraw.drawIndex).bitmap != null
 					&& drawableDataForDraw.isVisable) {
 				if (drawableDataForDraw.contourVertexArray != null) {
 					for (int j = 0; j < drawableDataForDraw.contourVertexArray.length; j++) {
 						float point1[];
 						float point2[];
 						if (j == drawableDataForDraw.contourVertexArray.length - 1) {
-							point1 = drawableDataForDraw.contourVertexArray[j];
-							point2 = drawableDataForDraw.contourVertexArray[0];
+							point1 = drawableDataForDraw.contourVertexArray[drawableDataForDraw.drawIndex][j];
+							point2 = drawableDataForDraw.contourVertexArray[drawableDataForDraw.drawIndex][0];
 						} else {
-							point1 = drawableDataForDraw.contourVertexArray[j];
-							point2 = drawableDataForDraw.contourVertexArray[j + 1];
+							point1 = drawableDataForDraw.contourVertexArray[drawableDataForDraw.drawIndex][j];
+							point2 = drawableDataForDraw.contourVertexArray[drawableDataForDraw.drawIndex][j + 1];
 						}
 						
 						g.save();
@@ -142,11 +158,28 @@ public class ArmatureObj {
 		}
 	}
 
-	public void playWithAnimation(String name) {
+	// 切换到指定的Animation
+	public void playWithAnimationName(String name) {
 		playWithAnimation = name;
 
-		moveData = armature.animationData.moveDataVector
+		moveData = armature.animationData.moveDataMap
 				.get(playWithAnimation);
+
+		currentAnimationFrameMax = moveData.dr - 1;
+
+		currentAnimationFrameRate = 1000 / (moveData.sc * 60);
+
+		frame = 0;
+	}
+	
+	// 切换到指定的Animation
+	public void playWithAnimationIndex(int index) {
+		if (index < 0 || index >= armature.animationData.moveDataVector.size()) {
+			return ;
+		}
+		
+		moveData = armature.animationData.moveDataVector
+				.get(index);
 
 		currentAnimationFrameMax = moveData.dr - 1;
 
@@ -177,6 +210,9 @@ public class ArmatureObj {
 		float cYOffset = 0;
 		float kXOffset = 0;
 		float kYOffset = 0;
+		int alpha1 = 0;
+		int alpha2 = 0;
+		int alphaOffset = 0;
 
 		// int frameDataIndex = getFrameDataIndex(frame, moveBoneData);
 
@@ -204,7 +240,7 @@ public class ArmatureObj {
 		// current frame
 		FrameData frameData = moveBoneData.frameDataVector
 				.get(drawableDataRootBone.frameDataIndex);
-
+		
 		if (drawableDataRootBone.frameDataIndex < moveBoneData.frameDataVector
 				.size() - 1) {
 			frameData2 = moveBoneData.frameDataVector
@@ -212,16 +248,20 @@ public class ArmatureObj {
 		} else {
 			frameData2 = null;
 		}
-
-		if (frameData.dI == -1000) {
+		
+		if (frameData.dI == -1000 || frameData.dI == -1) {
 			drawableDataRootBone.isVisable = false;
+			drawableDataRootBone.drawIndex = 0;
 		} else {
 			drawableDataRootBone.isVisable = true;
+			drawableDataRootBone.drawIndex = frameData.dI;
 		}
 
 		BoneData boneData = moveBoneData.boneData;
-
-		DisplayData displayData = boneData.displayData;
+		
+		DisplayData displayData = boneData.displayDataVector.get(drawableDataRootBone.drawIndex);
+					
+		alpha1 = frameData.isColor ? frameData.alpha : 255;
 
 		if (displayData.displayType == 0) {
 			SkinData skinData = displayData.skinData;
@@ -235,12 +275,16 @@ public class ArmatureObj {
 
 			// add interpolation
 			if (frameData2 != null) {
+				
+				alpha2 = frameData2.isColor ? frameData2.alpha : 255;
+				
 				xOffset = frameData2.x - frameData.x;
 				yOffset = frameData2.y - frameData.y;
 				cXOffset = frameData2.cX - frameData.cX;
 				cYOffset = frameData2.cY - frameData.cY;
 				kXOffset = frameData2.kX - frameData.kX;
 				kYOffset = frameData2.kY - frameData.kY;
+				alphaOffset = alpha2 - alpha1;
 
 				float rate = computeTweenRate(frame, frameData, frameData2);
 				xOffset = xOffset * rate;
@@ -249,6 +293,7 @@ public class ArmatureObj {
 				cYOffset = cYOffset * rate;
 				kXOffset = kXOffset * rate;
 				kYOffset = kYOffset * rate;
+				alphaOffset *= rate;
 
 				x += xOffset;
 				y += yOffset;
@@ -264,6 +309,8 @@ public class ArmatureObj {
 			drawableDataRootBone.cYBone = cY;
 			drawableDataRootBone.kXBone = kX;
 			drawableDataRootBone.kYBone = kY;
+			
+			drawableDataRootBone.alpha = alpha1 + alphaOffset;
 
 			// compute bone matrix
 			drawableDataRootBone.boneMatrix.reset();
@@ -292,9 +339,9 @@ public class ArmatureObj {
 					-skinData.y);
 			drawableDataRootBone.skinMatrix
 					.postTranslate(
-							-drawableDataRootBone.boneData.displayData.textureData.pX
+							-drawableDataRootBone.boneData.displayDataVector.get(drawableDataRootBone.drawIndex).textureData.pX
 									* displayData.bitmap.getWidth(),
-							-(1 - drawableDataRootBone.boneData.displayData.textureData.pY)
+							-(1 - drawableDataRootBone.boneData.displayDataVector.get(drawableDataRootBone.drawIndex).textureData.pY)
 									* displayData.bitmap.getHeight());
 			drawableDataRootBone.skinMatrix.postScale(skinData.cX, skinData.cY,
 					skinData.x, -skinData.y);
@@ -338,11 +385,11 @@ public class ArmatureObj {
 		DrawableData drawableData = drawableParentBoneData;
 		DrawableData parentDrawableData = drawableDataArray[parentBoneData.index];
 
-		DisplayData displayData = drawableData.boneData.displayData;
+		DisplayData displayData = drawableData.boneData.displayDataVector.get(drawableParentBoneData.drawIndex);
 
 		// children bone
 		BoneData boneData = drawableData.boneData;
-		SkinData skinData = boneData.displayData.skinData;
+		SkinData skinData = boneData.displayDataVector.get(drawableParentBoneData.drawIndex).skinData;
 
 		if (frame == 0) {
 			drawableParentBoneData.frameDataIndex = 0;
@@ -370,6 +417,12 @@ public class ArmatureObj {
 		// current frame
 		FrameData frameData = moveBoneData.frameDataVector
 				.get(drawableParentBoneData.frameDataIndex);
+		
+		if (frameData.isColor) {
+			drawableParentBoneData.alpha = frameData.alpha;
+		} else {
+			drawableParentBoneData.alpha = 255;
+		}
 
 		if (drawableParentBoneData.frameDataIndex < moveBoneData.frameDataVector
 				.size() - 1) {
@@ -378,12 +431,20 @@ public class ArmatureObj {
 		} else {
 			frameData2 = null;
 		}
-
-		if (frameData.dI == -1000) {
+		
+		if (frameData.dI == -1000 || frameData.dI == -1) {
 			drawableParentBoneData.isVisable = false;
+			drawableParentBoneData.drawIndex = 0;
 		} else {
 			drawableParentBoneData.isVisable = true;
+			drawableParentBoneData.drawIndex = frameData.dI;
 		}
+		
+		int alpha1 = 0;
+		int alpha2 = 0;
+		int alphaOffset = 0;
+		
+		alpha1 = frameData.isColor ? frameData.alpha : 255;
 
 		float xOffset = 0;
 		float yOffset = 0;
@@ -393,12 +454,17 @@ public class ArmatureObj {
 		float kYOffset = 0;
 
 		if (frameData2 != null) {
+			
+			alpha2 = frameData2.isColor ? frameData2.alpha : 255;
+			
 			xOffset = frameData2.x - frameData.x;
 			yOffset = frameData2.y - frameData.y;
 			cXOffset = frameData2.cX - frameData.cX;
 			cYOffset = frameData2.cY - frameData.cY;
 			kXOffset = frameData2.kX - frameData.kX;
 			kYOffset = frameData2.kY - frameData.kY;
+			alphaOffset = alpha2 - alpha1;
+			
 			float rate = computeTweenRate(frame, frameData, frameData2);
 			xOffset = xOffset * rate;
 			yOffset = yOffset * rate;
@@ -406,6 +472,7 @@ public class ArmatureObj {
 			cYOffset = cYOffset * rate;
 			kXOffset = kXOffset * rate;
 			kYOffset = kYOffset * rate;
+			alphaOffset *= rate;
 		}
 
 		// parent bone kx ky
@@ -417,6 +484,8 @@ public class ArmatureObj {
 		// parentDrawableData.kYBone);
 		// drawableData.x = pointF.x;
 		// drawableData.y = pointF.y;
+		
+		drawableParentBoneData.alpha = alpha1 + alphaOffset;
 
 		// children bone data
 		drawableData.x = boneData.x + frameData.x + xOffset;
@@ -468,9 +537,9 @@ public class ArmatureObj {
 		drawableParentBoneData.skinMatrix
 				.postTranslate(skinData.x, -skinData.y);
 		drawableParentBoneData.skinMatrix.postTranslate(
-				-drawableData.boneData.displayData.textureData.pX
+				-drawableData.boneData.displayDataVector.get(drawableParentBoneData.drawIndex).textureData.pX
 						* displayData.bitmap.getWidth(),
-				-(1 - drawableData.boneData.displayData.textureData.pY)
+				-(1 - drawableData.boneData.displayDataVector.get(drawableParentBoneData.drawIndex).textureData.pY)
 						* displayData.bitmap.getHeight());
 		drawableParentBoneData.skinMatrix.postScale(skinData.cX, skinData.cY,
 				skinData.x, -skinData.y);
@@ -583,18 +652,18 @@ public class ArmatureObj {
 	
 	public void computeVertex(DrawableData drawableData)
 	{
-		if (drawableData.contourVertexArray == null) {
+		if (drawableData.contourVertexArray == null || drawableData.contourVertexArray[drawableData.drawIndex] == null) {
 			return ;
 		}
 		
-		for (int i = 0; i < drawableData.contourVertexArray.length; i++) {
+		for (int i = 0; i < drawableData.contourVertexArray[drawableData.drawIndex].length; i++) {
 			PointF tempPointF = computePointInMatrix( 
-					drawableData.boneData.displayData.textureData.contourData.x[i], 
-					drawableData.boneData.displayData.textureData.contourData.y[i], 
+					drawableData.boneData.displayDataVector.get(drawableData.drawIndex).textureData.contourData.x[i], 
+					drawableData.boneData.displayDataVector.get(drawableData.drawIndex).textureData.contourData.y[i], 
 					drawableData.skinMatrix);
 			
-			drawableData.contourVertexArray[i][0] = tempPointF.x;
-			drawableData.contourVertexArray[i][1] = tempPointF.y;
+			drawableData.contourVertexArray[drawableData.drawIndex][i][0] = tempPointF.x;
+			drawableData.contourVertexArray[drawableData.drawIndex][i][1] = tempPointF.y;
 		}
 	}
 }

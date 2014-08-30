@@ -12,31 +12,35 @@ import com.dsy.ActionBoneParse.armature.MoveData;
 import com.dsy.ActionBoneParse.armature.SkinData;
 import com.dsy.ActionBoneParse.armature.TextureData;
 import com.dsy.ActionBoneParse.util.AndroidUtil;
+import com.dsy.ActionBoneParse.util.BitmapManager;
 import com.dsy.ActionBoneParse.util.Util;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 public class AnimationManager {
-	
+
 	public static Map<String, Armature> armatureMap = new HashMap<String, Armature>();
 
 	public AnimationManager(String jsonPath, String plistPath, String pngPath) {
-		
+
 	}
-	
+
 	public static void addArmature(String jsonPath) {
 		int temp1 = jsonPath.lastIndexOf("/");
 		int temp2 = jsonPath.lastIndexOf(".");
 		String tempFolderPath = jsonPath.substring(0, temp1 + 1);
 		String tempShortName = jsonPath.substring(temp1 + 1, temp2);
-		
+
 		String plistPath = tempFolderPath + tempShortName + ".plist";
 		String pngPath = tempFolderPath + "Resources/";
-		
+
+		PlistManager plistManager = new PlistManager(plistPath, pngPath);
+
 		Armature armature = new Armature();
-		
+
 		// add armature to armatureMap.
 		armatureMap.put(jsonPath, armature);
 
@@ -89,36 +93,53 @@ public class AnimationManager {
 
 				JSONArray displayDataArray = boneDataObj
 						.getJSONArray("display_data");
-				// for (int l = 0; l < displayDataArray.size(); l++) {
-				JSONObject displayDataObj = displayDataArray.getJSONObject(0);
+				for (int l = 0; l < displayDataArray.size(); l++) {
+					JSONObject displayDataObj = displayDataArray
+							.getJSONObject(l);
 
-				DisplayData displayData = new DisplayData();
+					DisplayData displayData = new DisplayData();
 
-				boneData.displayData = displayData;
+					boneData.displayDataVector.add(displayData);
 
-				displayData.displayType = displayDataObj.getInt("displayType");
+					displayData.displayType = displayDataObj
+							.getInt("displayType");
 
-				if (displayData.displayType == 0) {
-					displayData.name = displayDataObj.getString("name");
+					if (displayData.displayType == 0) {
+						displayData.name = displayDataObj.getString("name");
 
-					JSONArray skinDataArray = displayDataObj
-							.getJSONArray("skin_data");
-					for (int m = 0; m < skinDataArray.size(); m++) {
-						JSONObject skinDataObj = skinDataArray.getJSONObject(m);
+						Bitmap image = BitmapManager
+								.getImageFromAssetsFile(pngPath
+										+ displayData.name);
 
-						SkinData skinData = new SkinData();
-						// displayData.skinDataVecotor.add(skinData);
-						displayData.skinData = skinData;
+						// Log.e("image name", frameData.name);
 
-						skinData.x = (float) skinDataObj.getDouble("x");
-						skinData.y = (float) skinDataObj.getDouble("y");
-						skinData.cX = (float) skinDataObj.getDouble("cX");
-						skinData.cY = (float) skinDataObj.getDouble("cY");
-						skinData.kX = (float) skinDataObj.getDouble("kX");
-						skinData.kY = (float) skinDataObj.getDouble("kY");
+						if (image == null) {
+							Log.e("Error!!", "Bitmap can not found in foldar!");
+						}
+
+						displayData.bitmap = image;
+
+						plistManager.bitmapMap.put(displayData.name, image);
+
+						JSONArray skinDataArray = displayDataObj
+								.getJSONArray("skin_data");
+						for (int m = 0; m < skinDataArray.size(); m++) {
+							JSONObject skinDataObj = skinDataArray
+									.getJSONObject(m);
+
+							SkinData skinData = new SkinData();
+							// displayData.skinDataVecotor.add(skinData);
+							displayData.skinData = skinData;
+
+							skinData.x = (float) skinDataObj.getDouble("x");
+							skinData.y = (float) skinDataObj.getDouble("y");
+							skinData.cX = (float) skinDataObj.getDouble("cX");
+							skinData.cY = (float) skinDataObj.getDouble("cY");
+							skinData.kX = (float) skinDataObj.getDouble("kX");
+							skinData.kY = (float) skinDataObj.getDouble("kY");
+						}
 					}
 				}
-				// }
 			}
 		}
 
@@ -135,8 +156,9 @@ public class AnimationManager {
 
 				MoveData moveData = new MoveData();
 				moveData.name = moveDataObj.getString("name");
-				armature.animationData.moveDataVector.put(moveData.name,
+				armature.animationData.moveDataMap.put(moveData.name,
 						moveData);
+				armature.animationData.moveDataVector.add(moveData);
 
 				moveData.dr = moveDataObj.getInt("dr");
 				moveData.lp = moveDataObj.getBoolean("lp");
@@ -178,6 +200,18 @@ public class AnimationManager {
 						frameData.twE = frameDataObj.getInt("twE");
 						frameData.tweenFrame = frameDataObj
 								.getBoolean("tweenFrame");
+
+						if (frameDataObj.containsKey("color")) {
+							frameData.isColor = true;
+							JSONObject colorJsonObject = frameDataObj
+									.getJSONObject("color");
+							frameData.alpha = colorJsonObject.getInt("a");
+							frameData.red = colorJsonObject.getInt("r");
+							frameData.green = colorJsonObject.getInt("g");
+							frameData.blue = colorJsonObject.getInt("b");
+						} else {
+							frameData.isColor = false;
+						}
 					}
 				}
 			}
@@ -196,28 +230,33 @@ public class AnimationManager {
 			textureData.pX = (float) textureDataObj.getDouble("pX");
 			textureData.pY = (float) textureDataObj.getDouble("pY");
 			textureData.plistFile = textureDataObj.getString("plistFile");
-			
+
 			float anchorX = textureData.pX * textureData.width;
 			float anchorY = (1 - textureData.pY) * textureData.height;
-						
+
 			if (textureDataObj.containsKey("contour_data")) {
-				JSONArray contourDataArray = textureDataObj.getJSONArray("contour_data");
+				JSONArray contourDataArray = textureDataObj
+						.getJSONArray("contour_data");
 				if (contourDataArray.size() > 0) {
-					JSONObject contourDataObject = contourDataArray.getJSONObject(0);
-					
-					JSONArray vertexArray = contourDataObject.getJSONArray("vertex");
-					
+					JSONObject contourDataObject = contourDataArray
+							.getJSONObject(0);
+
+					JSONArray vertexArray = contourDataObject
+							.getJSONArray("vertex");
+
 					textureData.contourData.x = new float[vertexArray.size()];
 					textureData.contourData.y = new float[vertexArray.size()];
 					for (int j1 = 0; j1 < vertexArray.size(); j1++) {
 						JSONObject vertex = vertexArray.getJSONObject(j1);
 						// Direct compute vertex real position.
-						textureData.contourData.x[j1] = (float) vertex.getDouble("x");
-						textureData.contourData.y[j1] = (float) vertex.getDouble("y");
-						
+						textureData.contourData.x[j1] = (float) vertex
+								.getDouble("x");
+						textureData.contourData.y[j1] = (float) vertex
+								.getDouble("y");
+
 						textureData.contourData.x[j1] += anchorX;
-						
-						textureData.contourData.y[j1] = - textureData.contourData.y[j1];
+
+						textureData.contourData.y[j1] = -textureData.contourData.y[j1];
 						textureData.contourData.y[j1] += anchorY;
 					}
 				}
@@ -226,8 +265,6 @@ public class AnimationManager {
 
 		String tempString = jsonObject.getString("config_file_path");
 		armature.configFilePathVector.add(tempString);
-
-		PlistManager plistManager = new PlistManager(plistPath, pngPath);
 
 		// add texture data
 		for (int i = 0; i < armature.armatureData.boneDatas.size(); i++) {
@@ -240,26 +277,29 @@ public class AnimationManager {
 						.get(boneData.parent);
 			}
 
-			DisplayData displayData = boneData.displayData;
+			for (int j = 0; j < boneData.displayDataVector.size(); j++) {
+				DisplayData displayData = boneData.displayDataVector.get(j);
 
-			if (displayData.displayType == 0) {
-				String pngNameString = displayData.name;
-				int lastIndex = pngNameString.lastIndexOf('.');
-				pngNameString = pngNameString.substring(0, lastIndex);
+				if (displayData.displayType == 0) {
+					String pngNameString = displayData.name;
+					int lastIndex = pngNameString.lastIndexOf('.');
+					pngNameString = pngNameString.substring(0, lastIndex);
 
-				TextureData textureData = armature.textureDataVector
-						.get(pngNameString);
+					TextureData textureData = armature.textureDataVector
+							.get(pngNameString);
 
-				displayData.textureData = textureData;
+					displayData.textureData = textureData;
 
-				displayData.bitmap = plistManager.bitmapMap
-						.get(displayData.name);
+					// no need
+					// displayData.bitmap = plistManager.bitmapMap
+					// .get(displayData.name);
+				}
 			}
 		}
 
-		for (String tempString2 : armature.animationData.moveDataVector
+		for (String tempString2 : armature.animationData.moveDataMap
 				.keySet()) {
-			MoveData moveData = armature.animationData.moveDataVector
+			MoveData moveData = armature.animationData.moveDataMap
 					.get(tempString2);
 			for (int i = 0; i < moveData.moveDataVector.size(); i++) {
 				MoveBoneData moveBoneData = moveData.moveDataVector.get(i);

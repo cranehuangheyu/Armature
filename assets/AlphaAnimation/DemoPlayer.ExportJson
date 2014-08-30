@@ -1,0 +1,128 @@
+{
+  "content_scale": 1.0,
+  "armature_data": [
+    {
+      "strVersion": "1.5.0.0",
+      "version": 1.5,
+      "name": "AlphaAnimation",
+      "bone_data": [
+        {
+          "name": "Layer2",
+          "parent": "",
+          "dI": 0,
+          "x": 75.5,
+          "y": 15.873321533203125,
+          "z": 1,
+          "cX": 1.0,
+          "cY": 1.0,
+          "kX": -1.44808269,
+          "kY": 1.44808269,
+          "arrow_x": 302.27310180664062,
+          "arrow_y": 3.764262146432884E-07,
+          "effectbyskeleton": true,
+          "display_data": [
+            {
+              "name": "1.png",
+              "displayType": 0,
+              "skin_data": [
+                {
+                  "x": 156.1337,
+                  "y": -16.0086975,
+                  "cX": 1.00000012,
+                  "cY": 1.00000012,
+                  "kX": 1.44808233,
+                  "kY": -1.44808245
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "animation_data": [
+    {
+      "name": "AlphaAnimation",
+      "mov_data": [
+        {
+          "name": "Animation1",
+          "dr": 26,
+          "lp": true,
+          "to": 0,
+          "drTW": 0,
+          "twE": 0,
+          "sc": 1.0,
+          "mov_bone_data": [
+            {
+              "name": "Layer2",
+              "dl": 0.0,
+              "frame_data": [
+                {
+                  "dI": 0,
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0,
+                  "cX": 1.0,
+                  "cY": 1.0,
+                  "kX": 0.0,
+                  "kY": 0.0,
+                  "fi": 0,
+                  "twE": 0,
+                  "tweenFrame": true
+                },
+                {
+                  "dI": 0,
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0,
+                  "cX": 1.0,
+                  "cY": 1.0,
+                  "kX": 0.613200843,
+                  "kY": -0.613200843,
+                  "fi": 13,
+                  "twE": 0,
+                  "tweenFrame": true,
+                  "color": {
+                    "a": 100,
+                    "r": 255,
+                    "g": 255,
+                    "b": 255
+                  }
+                },
+                {
+                  "dI": 0,
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 0,
+                  "cX": 1.0,
+                  "cY": 1.0,
+                  "kX": 1.17923248,
+                  "kY": -1.17923248,
+                  "fi": 25,
+                  "twE": 0,
+                  "tweenFrame": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "texture_data": [
+    {
+      "name": "1",
+      "width": 201.0,
+      "height": 320.0,
+      "pX": 0.5,
+      "pY": 0.5,
+      "plistFile": ""
+    }
+  ],
+  "config_file_path": [
+    "AlphaAnimation0.plist"
+  ],
+  "config_png_path": [
+    "AlphaAnimation0.png"
+  ]
+}

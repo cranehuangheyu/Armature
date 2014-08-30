@@ -1301,8 +1301,10 @@ public final class Graphics implements UserData {
 		canvas.drawBitmap(bitmap, tmpMatrix, paint);
 	}
 	
-	public void drawBitmapBone(Bitmap bitmap, Matrix matrix) {
+	public void drawBitmapBone(Bitmap bitmap, Matrix matrix, int alpha) {
+		paint.setAlpha(alpha);
 		canvas.drawBitmap(bitmap, matrix, paint);
+		paint.setAlpha(255);
 	}
 	
 	public static Matrix matrix2 = new Matrix();

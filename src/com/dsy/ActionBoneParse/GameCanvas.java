@@ -8,6 +8,7 @@ import com.dsy.ActionBoneParse.util.AndroidUtil;
 import com.dsy.ActionBoneParse.util.BitmapManager;
 import com.dsy.ActionBoneParse.util.Graphics;
 import com.dsy.ActionBoneParse.view.MySurfaceView;
+import com.dsy.control.TouchEvent;
 import com.dsy.man.BigGunMan;
 import com.dsy.man.Hunter;
 
@@ -22,6 +23,7 @@ import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.test.IsolatedContext;
+import android.util.Log;
 
 public class GameCanvas implements UserData {
 
@@ -43,6 +45,8 @@ public class GameCanvas implements UserData {
 	public Bitmap mapBitmap;
 	
 	public ArmatureObj armatureObjArray[] = new ArmatureObj[21];
+	
+	public Hunter hunter;
 		
 	public GameCanvas(Context context, MySurfaceView mySurfaceView,
 			Canvas canvas, Paint paint) {
@@ -57,12 +61,12 @@ public class GameCanvas implements UserData {
 
 		g = new Graphics(canvas, paint, null);
 		
-		AnimationManager.addArmature("DemoPlayer/DemoPlayer.ExportJson");
-		AnimationManager.addArmature("BigGunMan/DemoPlayer.ExportJson");
+//		AnimationManager.addArmature("DemoPlayer/DemoPlayer.ExportJson");
+//		AnimationManager.addArmature("BigGunMan/DemoPlayer.ExportJson");
 		
 		mapBitmap = BitmapManager.getImageFromAssetsFile("map.png");
 				
-		for (int i = 0; i < 11; i++) {
+		for (int i = 0; i < 0; i++) {
 			armatureObjArray[i] = new BigGunMan();
 			
 			armatureObjArray[i].xPos = 50;
@@ -74,7 +78,8 @@ public class GameCanvas implements UserData {
 			}
 		}
 		
-		armatureObjArray[20] = new Hunter();
+		hunter = new Hunter();
+		armatureObjArray[20] = hunter;
 		armatureObjArray[20].yPos = 240;
 	}
 
@@ -109,12 +114,23 @@ public class GameCanvas implements UserData {
 		}
 	}
 	
+	public int nowLastPointArray[] = new int[4];
+	
 	public void logic(int dt)
 	{
 		for (int i = 0; i < 21; i++) {
 			if (armatureObjArray[i] != null) {
 				armatureObjArray[i].logic(dt);
 			}
+		}
+		
+		if (TouchEvent.getIsTouchDown()) {
+			Log.e("touchdown", "touchdown");
+		}
+		
+		if (TouchEvent.getIsTouchDown(nowLastPointArray)) {
+			Log.e("touch position", "x," + nowLastPointArray[0] + ":" + "y," + nowLastPointArray[1]);
+			hunter.setMoveTo(nowLastPointArray[0], nowLastPointArray[1]);
 		}
 	}
 }

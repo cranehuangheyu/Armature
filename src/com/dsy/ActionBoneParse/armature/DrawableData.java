@@ -33,7 +33,11 @@ public class DrawableData {
 	
 	public int frameDataIndex;
 	
-	public float contourVertexArray[][];
+	public float contourVertexArray[][][];
+	
+	public int alpha;
+	
+	public int drawIndex;
 		
 	public DrawableData() {
 		boneMatrix = new Matrix();

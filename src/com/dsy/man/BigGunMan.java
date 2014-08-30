@@ -8,7 +8,7 @@ public class BigGunMan extends ArmatureObj {
 		super("BigGunMan/DemoPlayer.ExportJson");
 		// TODO Auto-generated constructor stub
 		
-		playWithAnimation("挨打");
+		playWithAnimationName("挨打");
 	}
 	
 	public void draw(Graphics g) {

@@ -32,48 +32,48 @@ public class PlistManager {
 		
 		plistData = new PlistData();
 		
-		try {
-			XMLReader xr;
-			xr = XMLReaderFactory.createXMLReader("org.apache.xerces.parsers.SAXParser");
-			
-			// ∞≤◊∞ContentHandler£Æ£Æ£Æ 
-			xr.setContentHandler( new PlistHandler(plistData) ); 
-
-			// Ω‚ŒˆŒƒº˛£Æ£Æ£Æ 
-//			InputStream inputStream = AndroidUtil.getResourceAsStream("DemoPlayer/Export/DemoPlayer/NewAnimation0.plist");
-			InputStream inputStream = AndroidUtil.getResourceAsStream(plistPath);
-
-			try {
-//				xr.setFeature( "http://xml.org/sax/features/validation", false); 
-//				//设置解析器不验证命名空间，(即忽略外部的stylesheet，xls文档)
-//				xr.setFeature( "http://xml.org/sax/features/namespaces", false); 
-				
-				xr.setFeature(
-					    "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-				xr.setFeature(
-					    "http://xml.org/sax/features/validation",false);
-
-				xr.parse( new InputSource( 
-						inputStream) );
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} 
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			XMLReader xr;
+//			xr = XMLReaderFactory.createXMLReader("org.apache.xerces.parsers.SAXParser");
+//			
+//			// ∞≤◊∞ContentHandler£Æ£Æ£Æ 
+//			xr.setContentHandler( new PlistHandler(plistData) ); 
+//
+//			// Ω‚ŒˆŒƒº˛£Æ£Æ£Æ 
+////			InputStream inputStream = AndroidUtil.getResourceAsStream("DemoPlayer/Export/DemoPlayer/NewAnimation0.plist");
+//			InputStream inputStream = AndroidUtil.getResourceAsStream(plistPath);
+//
+//			try {
+////				xr.setFeature( "http://xml.org/sax/features/validation", false); 
+////				//设置解析器不验证命名空间，(即忽略外部的stylesheet，xls文档)
+////				xr.setFeature( "http://xml.org/sax/features/namespaces", false); 
+//				
+//				xr.setFeature(
+//					    "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+//				xr.setFeature(
+//					    "http://xml.org/sax/features/validation",false);
+//
+//				xr.parse( new InputSource( 
+//						inputStream) );
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} 
+//		} catch (SAXException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		
 		Log.e("image name size", plistData.frames.size() + "");
 			
-		for (String key : plistData.frames.keySet()) {
-			FrameData frameData = plistData.frames.get(key);
-			
-			Bitmap image = BitmapManager.getImageFromAssetsFile(pngPath + frameData.name);
-			
-			Log.e("image name", frameData.name);
-			
-			bitmapMap.put(frameData.name, image);
-		}		
+//		for (String key : plistData.frames.keySet()) {
+//			FrameData frameData = plistData.frames.get(key);
+//			
+//			Bitmap image = BitmapManager.getImageFromAssetsFile(pngPath + frameData.name);
+//			
+//			Log.e("image name", frameData.name);
+//			
+//			bitmapMap.put(frameData.name, image);
+//		}		
 	}
 }

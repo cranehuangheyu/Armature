@@ -20,7 +20,7 @@ public class BoneData {
 	public float arrow_y;
 	public boolean effectbyskeleton;
 	
-	public DisplayData displayData;
+	public List<DisplayData> displayDataVector;
 	
 	public BoneData parentBoneData;
 	
@@ -30,5 +30,6 @@ public class BoneData {
 	
 	public BoneData() {
 		drawableDataVector = new ArrayList<DrawableData>();
+		displayDataVector = new ArrayList<DisplayData>();
 	}
 }

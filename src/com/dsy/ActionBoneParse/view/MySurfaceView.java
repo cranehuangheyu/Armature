@@ -3,6 +3,7 @@ package com.dsy.ActionBoneParse.view;
 import com.dsy.ActionBoneParse.ArmatureActivity;
 import com.dsy.ActionBoneParse.GameCanvas;
 import com.dsy.ActionBoneParse.UserData;
+import com.dsy.control.TouchEvent;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -86,6 +87,8 @@ public class MySurfaceView extends SurfaceView implements
 		screan_real_width = dm.widthPixels;
 		// 窗口高度
 		screan_real_height = dm.heightPixels;
+		
+		TouchEvent.init(screan_real_width, screan_real_height);
 
 		// 屏幕区域
 //		screanRect = new Rect(0, 0, UserData.screan_width,
@@ -119,6 +122,7 @@ public class MySurfaceView extends SurfaceView implements
 	}
 
 	public void logic(int dt) {
+		TouchEvent.refresh();
 		game.logic(dt);
 	}
 
@@ -168,6 +172,11 @@ public class MySurfaceView extends SurfaceView implements
 		isAttached = false;
 	}
 	
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {	
+		return TouchEvent.touch(event);
+	}
+	
 	// 离开游戏
 	public void exitGameCommand() {
 		flag = false;
@@ -195,7 +204,7 @@ public class MySurfaceView extends SurfaceView implements
 //			time2 = System.currentTimeMillis() - time2;
 //			Log.e("timeDelta logic", "" + time2);
 			start = System.currentTimeMillis() - start;
-			Log.e("delay time", "" + timeDelta);
+//			Log.e("delay time", "" + timeDelta);
 			frameDelay = UserData.FRAME_DELAY;
 			if (start < frameDelay) {
 				timeDelta = frameDelay;

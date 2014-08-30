@@ -12,4 +12,10 @@ public class FrameData {
 	public int fi;
 	public int twE;
 	public boolean tweenFrame;
+	
+	public boolean isColor;
+	public int alpha;
+	public int red;
+	public int green;
+	public int blue;
 }
